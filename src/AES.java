@@ -1,6 +1,7 @@
 public class AES {
 
 	public static int[][] sbox = new int[16][16];
+	public static int roundNum = 0;
 
 	public static void main(String[] args) {
 		sbox = sBox.getSBox();
@@ -9,14 +10,83 @@ public class AES {
 				{ "3d", "f4", "c6", "f8" }, { "e3", "e2", "8d", "48" },
 				{ "be", "2b", "2a", "08" }, };
 
-		String[][] cipherkey = { { "a0", "88", "23", "2a" },
-				{ "fa", "54", "a3", "6c" }, { "fe", "2c", "39", "76" },
-				{ "17", "b1", "39", "05" }, };
+		String[][] cipherkey = { { "2b", "28", "ab", "09" },
+				{ "7e", "ae", "f7", "cf" }, { "15", "d2", "15", "4f" },
+				{ "16", "a6", "88", "3c" }, };
 
+		String[][] rcon = {
+				{ "01", "02", "04", "08", "10", "20", "40", "80", "1b", "36" },
+				{ "00", "00", "00", "00", "00", "00", "00", "00", "00", "00" },
+				{ "00", "00", "00", "00", "00", "00", "00", "00", "00", "00" },
+				{ "00", "00", "00", "00", "00", "00", "00", "00", "00", "00" }, };
+
+		for (int i = 0; i < 9; i++) {
+			cipherkey = keyExpansion(cipherkey, rcon);
+			subBytes(plaintext);
+			shiftRows(plaintext);
+			mixColumns(plaintext);
+			addRoundKey(plaintext, cipherkey);
+			roundNum++;
+		}
+		
+		cipherkey = keyExpansion(cipherkey, rcon);
 		subBytes(plaintext);
 		shiftRows(plaintext);
-		mixColumns(plaintext);
 		addRoundKey(plaintext, cipherkey);
+		roundNum++;
+	}
+
+	public static String[][] keyExpansion(String[][] cipherkey, String[][] rcon) {
+		String[] rotword = new String[4];
+		String[][] result = new String[4][4];
+		String row, column, test;
+		int val, val2, val3;
+		Byte b, b2, b3;
+
+		rotword[0] = cipherkey[1][3];
+		rotword[1] = cipherkey[2][3];
+		rotword[2] = cipherkey[3][3];
+		rotword[3] = cipherkey[0][3];
+
+		for (int i = 0; i < 4; i++) {
+			row = String.valueOf(rotword[i].charAt(0));
+			column = String.valueOf(rotword[i].charAt(1));
+			result[i][0] = Integer
+					.toHexString(sbox[Integer.parseInt(row, 16)][Integer
+							.parseInt(column, 16)]);
+		}
+
+		for (int j = 0; j < 4; j++) {
+			val = Integer.parseInt(result[j][0], 16);
+			b = (byte) val;
+
+			val2 = Integer.parseInt(cipherkey[j][0], 16);
+			b2 = (byte) val2;
+
+			val3 = Integer.parseInt(rcon[j][roundNum], 16);
+			b3 = (byte) val3;
+
+			b = (byte) (b ^ b2 ^ b3);
+
+			test = String.format("%02X", b);
+			result[j][0] = test;
+		}
+
+		for (int i = 1; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				val = Integer.parseInt(result[j][i - 1], 16);
+				b = (byte) val;
+
+				val2 = Integer.parseInt(cipherkey[j][i], 16);
+				b2 = (byte) val2;
+
+				b = (byte) (b ^ b2);
+
+				test = String.format("%02X", b);
+				result[j][i] = test;
+			}
+		}
+		return result;
 	}
 
 	public static String[][] subBytes(String[][] plaintext) {
@@ -417,15 +487,15 @@ public class AES {
 		Byte b, b2;
 		String result;
 		StringBuilder builder = new StringBuilder();
-		
+
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				val = Integer.parseInt(plaintext[j][i], 16);
 				b = (byte) val;
-				
+
 				val2 = Integer.parseInt(roundkey[j][i], 16);
 				b2 = (byte) val2;
-				
+
 				b = (byte) (b ^ b2);
 				result = String.format("%02X", b);
 				plaintext[j][i] = result;
@@ -433,7 +503,7 @@ public class AES {
 			}
 		}
 
-		System.out.println("After addRoundKey:");
+		System.out.println("After addRoundKey(" + (roundNum+1) + "):");
 		System.out.println(builder.toString());
 		return plaintext;
 	}
