@@ -1,18 +1,54 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.util.Scanner;
+
 public class AES {
 
 	public static int[][] sbox = new int[16][16];
 	public static int roundNum = 0;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws FileNotFoundException {
 		sbox = sBox.getSBox();
+		File file = new File(args[2]);
+		Scanner scan = new Scanner(file);
+		File file2 = new File(args[1]);
+		Scanner scan2 = new Scanner(file2);
+		int counter = 0;
+		String check = args[0];
+		PrintWriter writer = new PrintWriter("plaintext.enc");
+		PrintWriter writer2 = new PrintWriter("plaintext.enc.dec");
 
-		String[][] plaintext = { { "19", "a0", "9a", "e9" },
-				{ "3d", "f4", "c6", "f8" }, { "e3", "e2", "8d", "48" },
-				{ "be", "2b", "2a", "08" }, };
+		String[][] plaintext = new String[4][4];
+		String[][] cipherkey = new String[4][4];
 
-		String[][] cipherkey = { { "2b", "28", "ab", "09" },
-				{ "7e", "ae", "f7", "cf" }, { "15", "d2", "15", "4f" },
-				{ "16", "a6", "88", "3c" }, };
+		while (scan.hasNext()) {
+			String s = scan.next();
+			for (int i = 0; i < 4; i++) {
+				for (int j = 0; j < 4; j++) {
+					plaintext[i][j] = s.substring(counter, counter + 2);
+					counter += 2;
+				}
+			}
+			counter = 0;
+		}
+
+		counter = 0;
+		String keytemp = scan2.next();
+		for (int i = 0; i < 4; i++) {
+			for (int j = 0; j < 4; j++) {
+				cipherkey[i][j] = keytemp.substring(counter, counter + 2);
+				counter += 2;
+			}
+		}
+
+//		String[][] tempplaintext = { { "19", "a0", "9a", "e9" },
+//				{ "3d", "f4", "c6", "f8" }, { "e3", "e2", "8d", "48" },
+//				{ "be", "2b", "2a", "08" }, };
+//
+//		String[][] tempcipherkey = { { "2b", "28", "ab", "09" },
+//				{ "7e", "ae", "f7", "cf" }, { "15", "d2", "15", "4f" },
+//				{ "16", "a6", "88", "3c" }, };
 
 		String[][] rcon = {
 				{ "01", "02", "04", "08", "10", "20", "40", "80", "1b", "36" },
@@ -20,20 +56,38 @@ public class AES {
 				{ "00", "00", "00", "00", "00", "00", "00", "00", "00", "00" },
 				{ "00", "00", "00", "00", "00", "00", "00", "00", "00", "00" }, };
 
-		for (int i = 0; i < 9; i++) {
+		if (check.equals("e")) {
+			System.out.println("encrypt");
+			for (int i = 0; i < 9; i++) {
+				cipherkey = keyExpansion(cipherkey, rcon);
+				subBytes(plaintext);
+				shiftRows(plaintext);
+				mixColumns(plaintext);
+				addRoundKey(plaintext, cipherkey);
+				roundNum++;
+			}
+
 			cipherkey = keyExpansion(cipherkey, rcon);
 			subBytes(plaintext);
 			shiftRows(plaintext);
-			mixColumns(plaintext);
 			addRoundKey(plaintext, cipherkey);
 			roundNum++;
+			
+			for (int i = 0; i < 4; i++) {
+				for (int j = 0; j < 4; j++) {
+					writer.print(plaintext[i][j]);
+				}
+			}
 		}
-		
-		cipherkey = keyExpansion(cipherkey, rcon);
-		subBytes(plaintext);
-		shiftRows(plaintext);
-		addRoundKey(plaintext, cipherkey);
-		roundNum++;
+		else {
+			System.out.println("decrypt");
+			
+		}
+
+		scan.close();
+		scan2.close();
+		writer.close();
+		writer2.close();
 	}
 
 	public static String[][] keyExpansion(String[][] cipherkey, String[][] rcon) {
@@ -503,7 +557,7 @@ public class AES {
 			}
 		}
 
-		System.out.println("After addRoundKey(" + (roundNum+1) + "):");
+		System.out.println("After addRoundKey(" + (roundNum + 1) + "):");
 		System.out.println(builder.toString());
 		return plaintext;
 	}
