@@ -1,3 +1,13 @@
+//Name: Zach Zador
+//email: zazador@gmail.com
+//CSID: sakz
+//UTEID: zaz78
+//
+//Name: Mike Schiller
+//email: schillbs@gmail.com
+//CSID: schiller
+//UTEID: mds3428
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -18,16 +28,25 @@ public class AES {
 		sbox = sBox.getSBox();
 		invsbox = sBox.getinvSBox();
 		File file = new File(args[2]);
+		long file1B = file.length();
+		long file1K = file1B / 1024;
+		long file1M = file1K / 1024;
 		Scanner scan = new Scanner(file);
 		File file2 = new File(args[1]);
+		double file2B = file.length();
+		double file2K = file2B / 1024;
+		double file2M = file2K / 1024;
 		Scanner scan2 = new Scanner(file2);
 		int counter = 0;
 		check = args[0];
+
+		final long startTime = System.currentTimeMillis();
 
 		String[][] plaintext = new String[4][4];
 		String[][] cipherkey = new String[4][4];
 		HashMap<Integer, String[][]> cipherTable = new HashMap<Integer, String[][]>();
 
+		// Form the plaintext 2D array
 		if (check.equals("e")) {
 			while (scan.hasNext()) {
 				String s = scan.next();
@@ -52,6 +71,7 @@ public class AES {
 
 		counter = 0;
 		String keytemp = scan2.next();
+		// Form the cipherkey 2D array
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				cipherkey[i][j] = keytemp.substring(counter, counter + 2);
@@ -65,8 +85,8 @@ public class AES {
 				{ "00", "00", "00", "00", "00", "00", "00", "00", "00", "00" },
 				{ "00", "00", "00", "00", "00", "00", "00", "00", "00", "00" }, };
 
+		// If encryption, begin steps
 		if (check.equals("e")) {
-			System.out.println("encrypt");
 			PrintWriter writer = new PrintWriter("plaintext.enc");
 			for (int i = 0; i < 9; i++) {
 				cipherkey = keyExpansion(cipherkey, rcon);
@@ -89,8 +109,8 @@ public class AES {
 				}
 			}
 			writer.close();
+			// Otherwise, begin decryption
 		} else {
-			System.out.println("decrypt");
 			PrintWriter writer2 = new PrintWriter("plaintext.enc.dec");
 			cipherTable.put(99, cipherkey);
 			for (int w = 0; w < 10; w++) {
@@ -106,13 +126,6 @@ public class AES {
 				cipherkey = cipherTable.get(tableCount);
 				invSubBytes(plaintext);
 				invShiftRows(plaintext);
-				// for (int k = 0; k < 4; k++) {
-				// for (int j = 0; j < 4; j++) {
-				// System.out.print(cipherkey[k][j]);
-				// }
-				// System.out.println();
-				// }
-				// System.out.println();
 				addRoundKey(plaintext, cipherkey);
 				inverseMixColumns(plaintext);
 				decRoundNum--;
@@ -135,8 +148,13 @@ public class AES {
 		}
 		scan.close();
 		scan2.close();
+
+		final long endTime = System.currentTimeMillis();
+		// System.out.println("Bandwidth: " + file1B + "/" + (endTime -
+		// startTime) + " Bytes/s");
 	}
 
+	// Key expansion step of AES
 	public static String[][] keyExpansion(String[][] cipherkey, String[][] rcon) {
 		String[] rotword = new String[4];
 		String[][] result = new String[4][4];
@@ -149,6 +167,7 @@ public class AES {
 		rotword[2] = cipherkey[3][3];
 		rotword[3] = cipherkey[0][3];
 
+		// Store temp answers to result after looking up in sBox
 		for (int i = 0; i < 4; i++) {
 			row = String.valueOf(rotword[i].charAt(0));
 			column = String.valueOf(rotword[i].charAt(1));
@@ -157,6 +176,7 @@ public class AES {
 							.parseInt(column, 16)]);
 		}
 
+		// Form hex value from int
 		for (int j = 0; j < 4; j++) {
 			val = Integer.parseInt(result[j][0], 16);
 			b = (byte) val;
@@ -188,22 +208,17 @@ public class AES {
 			}
 		}
 
-		for (int i = 0; i < 4; i++) {
-			for (int j = 0; j < 4; j++) {
-				System.out.print(result[i][j]);
-			}
-			System.out.println();
-		}
-		System.out.println();
 		return result;
 	}
 
+	// subBytes step of AES
 	public static String[][] subBytes(String[][] plaintext) {
 		String temp = "";
 		String row = "";
 		String column = "";
 		StringBuilder builder = new StringBuilder();
 
+		// Swap ints with those from sBox
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				temp = plaintext[i][j];
@@ -219,6 +234,7 @@ public class AES {
 		return plaintext;
 	}
 
+	// InvSubBytes step for AES
 	public static String[][] invSubBytes(String[][] plaintext) {
 		String temp = "";
 		String row = "";
@@ -226,6 +242,7 @@ public class AES {
 		String s;
 		StringBuilder builder = new StringBuilder();
 
+		// Replace values in plaintext with those from invSBox
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				temp = plaintext[j][i];
@@ -248,6 +265,7 @@ public class AES {
 		return plaintext;
 	}
 
+	// shiftRows step of AES
 	public static String[][] shiftRows(String[][] plaintext) {
 		String[] temp = new String[4];
 
@@ -257,11 +275,13 @@ public class AES {
 			builder.append(plaintext[0][i]);
 		}
 
+		// Go column at a time for shifting
 		for (int i = 1; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				temp[j] = plaintext[i][j];
 			}
 
+			// Does the actual shifting
 			temp = shift(temp, i);
 
 			for (int k = 0; k < 4; k++) {
@@ -275,20 +295,21 @@ public class AES {
 		return plaintext;
 	}
 
+	// invShiftRows step of AES
 	public static String[][] invShiftRows(String[][] plaintext) {
 		String[] temp = new String[4];
 
 		StringBuilder builder = new StringBuilder();
 
-		// for (int i = 0; i < 4; i++) {
-		// builder.append(plaintext[0][i]);
-		// }
+		// Go column at a time for shifting
 		for (int i = 1; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				temp[j] = plaintext[i][j];
 			}
 
+			// Does the actual inverse shifting
 			temp = invShift(temp, i);
+
 			for (int k = 0; k < 4; k++) {
 				plaintext[i][k] = temp[k];
 			}
@@ -305,6 +326,7 @@ public class AES {
 		return plaintext;
 	}
 
+	// Shifts the columns based on which row it is currently on
 	public static String[] shift(String[] temp, int i) {
 		String temp2 = "";
 
@@ -319,6 +341,7 @@ public class AES {
 		return temp;
 	}
 
+	// Shifts the columns based on which row it is currently on
 	public static String[] invShift(String[] temp, int i) {
 		String temp2 = "";
 
@@ -333,6 +356,7 @@ public class AES {
 		return temp;
 	}
 
+	// mixColumns step of AES
 	public static String[][] mixColumns(String[][] plaintext) {
 		String[] temp = new String[4];
 
@@ -341,6 +365,7 @@ public class AES {
 			for (int j = 0; j < 4; j++) {
 				temp[j] = plaintext[j][i];
 			}
+			// Does the multiplication for mixColumns
 			temp = mult(temp);
 
 			for (int k = 0; k < 4; k++) {
@@ -353,6 +378,7 @@ public class AES {
 		return plaintext;
 	}
 
+	// inverseMixColumns step of AES
 	public static String[][] inverseMixColumns(String[][] plaintext) {
 		String[] temp = new String[4];
 
@@ -361,11 +387,11 @@ public class AES {
 			for (int j = 0; j < 4; j++) {
 				temp[j] = plaintext[j][i];
 			}
+			// Begins the actual multiplication of this step
 			temp = invMixColumns(temp);
 
 			for (int k = 0; k < 4; k++) {
 				plaintext[k][i] = temp[k];
-				// System.out.println("temp " + temp[k]);
 				builder.append(temp[k]);
 			}
 		}
@@ -374,6 +400,7 @@ public class AES {
 		return plaintext;
 	}
 
+	// Calls to begin the multplication for invMixColumns
 	public static String[] invMixColumns(String[] plaintext) {
 		Byte[] myB = new Byte[4];
 		int val, bee;
@@ -387,9 +414,7 @@ public class AES {
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				s = plaintext[j];
-				// System.out.println("s: " + s);
 				invMat = invCol[i][j];
-				// System.out.println(invMat);
 				if (invMat == 9)
 					tempResults[j] = Integer.toHexString(invMult(s, 9));
 				else if (invMat == 11)
@@ -399,26 +424,20 @@ public class AES {
 				else if (invMat == 14)
 					tempResults[j] = Integer.toHexString(invMult(s, 14));
 
-				// System.out.println("tempResults[" + j + "] = " +
-				// tempResults[j]);
 				val = Integer.parseInt(tempResults[j], 16);
 				b = (byte) val;
 				myB[j] = b;
-				// System.out.println("myB[" + j+ "]: " + String.format("%02X",
-				// myB[j]));
 			}
 			Byte result = (byte) (myB[0] ^ myB[1] ^ myB[2] ^ myB[3]);
 			String test = String.format("%02X", result);
-			// System.out.println("r" + i + ": " + test);
 			results[i] = test;
 			builder.append(test);
-			// System.out.println("what" + test);
 		}
-		// System.out.println("After invMixColumns:");
-		// System.out.println(builder.toString());
 		return results;
 	}
 
+	// Very long way to iteratively process through the multiplication for
+	// mixColumns step
 	public static String[] mult(String[] temp) {
 		Byte[] myB = new Byte[4];
 		int val, bee;
@@ -428,48 +447,28 @@ public class AES {
 
 		val = Integer.parseInt(temp[0], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[0] = b;
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[0] = b;
 		}
 
 		val = Integer.parseInt(temp[1], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[1], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -477,11 +476,7 @@ public class AES {
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[1], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -493,60 +488,36 @@ public class AES {
 		myB[3] = (byte) Integer.parseInt(temp[3], 16);
 
 		Byte result = (byte) (myB[0] ^ myB[1] ^ myB[2] ^ myB[3]);
-
-		// System.out.println("FINAL BOX 1 = "
-		// + Integer.toBinaryString((result & 0xFF) + 0x100).substring(1));
 		String test = String.format("%02X", result);
 		tempResults[0] = test;
-		// System.out.println(tempResults[0]);
 
 		/********************************************************/
 		myB[0] = (byte) Integer.parseInt(temp[0], 16);
 
 		val = Integer.parseInt(temp[1], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[1] = b;
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[1] = b;
 		}
 
 		val = Integer.parseInt(temp[2], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[2], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -554,11 +525,7 @@ public class AES {
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[2], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -568,12 +535,8 @@ public class AES {
 		myB[3] = (byte) Integer.parseInt(temp[3], 16);
 
 		result = (byte) (myB[0] ^ myB[1] ^ myB[2] ^ myB[3]);
-
-		// System.out.println("FINAL BOX 2 = "
-		// + Integer.toBinaryString((result & 0xFF) + 0x100).substring(1));
 		test = String.format("%02X", result);
 		tempResults[1] = test;
-		// System.out.println(tempResults[1]);
 
 		/********************************************************/
 
@@ -583,48 +546,28 @@ public class AES {
 
 		val = Integer.parseInt(temp[2], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[2] = b;
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[2] = b;
 		}
 
 		val = Integer.parseInt(temp[3], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[3], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -632,11 +575,7 @@ public class AES {
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[3], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -644,30 +583,18 @@ public class AES {
 		}
 
 		result = (byte) (myB[0] ^ myB[1] ^ myB[2] ^ myB[3]);
-
-		// System.out.println("FINAL BOX 3 = "
-		// + Integer.toBinaryString((result & 0xFF) + 0x100).substring(1));
 		test = String.format("%02X", result);
 		tempResults[2] = test;
-		// System.out.println(tempResults[2]);
 
 		/********************************************************/
 		val = Integer.parseInt(temp[0], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[0], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -675,11 +602,7 @@ public class AES {
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			bee = Integer.parseInt(temp[0], 16);
 			bb = (byte) bee;
 			b = (byte) (b ^ bb);
@@ -692,49 +615,33 @@ public class AES {
 
 		val = Integer.parseInt(temp[3], 16);
 		b = (byte) val;
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		s = Integer.toBinaryString((b & 0xFF) + 0x100).substring(1);
 		b = (byte) (b << 1);
-		// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-		// .substring(1));
 		if (s.charAt(0) == '1') {
 			bee = Integer.parseInt("1b", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[3] = b;
 		} else {
 			bee = Integer.parseInt("00", 16);
 			bb = (byte) bee;
-			// System.out.println(Integer.toBinaryString((bb & 0xFF) + 0x100)
-			// .substring(1));
 			b = (byte) (b ^ bb);
-			// System.out.println(Integer.toBinaryString((b & 0xFF) + 0x100)
-			// .substring(1));
 			myB[3] = b;
 		}
 
 		result = (byte) (myB[0] ^ myB[1] ^ myB[2] ^ myB[3]);
-
-		// System.out.println("FINAL BOX 4 = "
-		// + Integer.toBinaryString((result & 0xFF) + 0x100).substring(1));
 		test = String.format("%02X", result);
 		tempResults[3] = test;
-		// System.out.println(tempResults[3]);
 
 		return tempResults;
 	}
 
+	// Nice and simple way to do the multplication
 	public static int invMult(String s, int num) {
 		int[] mul9 = sBox.get9Box();
 		int[] mul11 = sBox.get11Box();
 		int[] mul13 = sBox.get13Box();
 		int[] mul14 = sBox.get14Box();
-		// System.out.println(Integer.parseInt(s, 16));
 
 		if (num == 9)
 			return mul9[Integer.parseInt(s, 16)];
@@ -747,6 +654,7 @@ public class AES {
 
 	}
 
+	// XOR the roundKey to the plaintext
 	public static String[][] addRoundKey(String[][] plaintext,
 			String[][] roundkey) {
 		int val, val2;
@@ -758,10 +666,8 @@ public class AES {
 			for (int j = 0; j < 4; j++) {
 				val = Integer.parseInt(plaintext[j][i], 16);
 				b = (byte) val;
-				// System.out.println(val);
 
 				val2 = Integer.parseInt(roundkey[j][i], 16);
-				// System.out.println(val2);
 				b2 = (byte) val2;
 
 				b = (byte) (b ^ b2);
