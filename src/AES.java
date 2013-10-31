@@ -24,23 +24,21 @@ public class AES {
 		int counter = 0;
 		check = args[0];
 
-
-
 		String[][] plaintext = new String[4][4];
 		String[][] cipherkey = new String[4][4];
 		HashMap<Integer, String[][]> cipherTable = new HashMap<Integer, String[][]>();
 
 		if (check.equals("e")) {
-		while (scan.hasNext()) {
-			String s = scan.next();
-			for (int i = 0; i < 4; i++) {
-				for (int j = 0; j < 4; j++) {
-					plaintext[i][j] = s.substring(counter, counter + 2);
-					counter += 2;
+			while (scan.hasNext()) {
+				String s = scan.next();
+				for (int i = 0; i < 4; i++) {
+					for (int j = 0; j < 4; j++) {
+						plaintext[i][j] = s.substring(counter, counter + 2);
+						counter += 2;
+					}
 				}
+				counter = 0;
 			}
-			counter = 0;
-		}
 		} else {
 			String s = scan.next();
 			for (int i = 0; i < 4; i++) {
@@ -60,14 +58,6 @@ public class AES {
 				counter += 2;
 			}
 		}
-
-		// String[][] tempplaintext = { { "19", "a0", "9a", "e9" },
-		// { "3d", "f4", "c6", "f8" }, { "e3", "e2", "8d", "48" },
-		// { "be", "2b", "2a", "08" }, };
-		//
-		// String[][] tempcipherkey = { { "2b", "28", "ab", "09" },
-		// { "7e", "ae", "f7", "cf" }, { "15", "d2", "15", "4f" },
-		// { "16", "a6", "88", "3c" }, };
 
 		String[][] rcon = {
 				{ "01", "02", "04", "08", "10", "20", "40", "80", "1b", "36" },
@@ -116,13 +106,13 @@ public class AES {
 				cipherkey = cipherTable.get(tableCount);
 				invSubBytes(plaintext);
 				invShiftRows(plaintext);
-//				for (int k = 0; k < 4; k++) {
-//					for (int j = 0; j < 4; j++) {
-//						System.out.print(cipherkey[k][j]);
-//					}
-//					System.out.println();
-//				}
-//				System.out.println();
+				// for (int k = 0; k < 4; k++) {
+				// for (int j = 0; j < 4; j++) {
+				// System.out.print(cipherkey[k][j]);
+				// }
+				// System.out.println();
+				// }
+				// System.out.println();
 				addRoundKey(plaintext, cipherkey);
 				inverseMixColumns(plaintext);
 				decRoundNum--;
@@ -197,7 +187,7 @@ public class AES {
 				result[j][i] = test;
 			}
 		}
-		
+
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				System.out.print(result[i][j]);
@@ -241,8 +231,9 @@ public class AES {
 				temp = plaintext[j][i];
 				row = String.valueOf(temp.charAt(0));
 				column = String.valueOf(temp.charAt(1));
-				s = Integer.toHexString(invsbox[Integer.parseInt(
-						row, 16)][Integer.parseInt(column, 16)]);
+				s = Integer
+						.toHexString(invsbox[Integer.parseInt(row, 16)][Integer
+								.parseInt(column, 16)]);
 				if (s.length() == 2)
 					plaintext[j][i] = s;
 				else {
@@ -289,9 +280,9 @@ public class AES {
 
 		StringBuilder builder = new StringBuilder();
 
-//		for (int i = 0; i < 4; i++) {
-//			builder.append(plaintext[0][i]);
-//		}
+		// for (int i = 0; i < 4; i++) {
+		// builder.append(plaintext[0][i]);
+		// }
 		for (int i = 1; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				temp[j] = plaintext[i][j];
@@ -302,13 +293,13 @@ public class AES {
 				plaintext[i][k] = temp[k];
 			}
 		}
-		
+
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				builder.append(plaintext[j][i]);
 			}
 		}
-		
+
 		System.out.println("After invShiftRows:");
 		System.out.println(builder.toString());
 		return plaintext;
@@ -374,7 +365,7 @@ public class AES {
 
 			for (int k = 0; k < 4; k++) {
 				plaintext[k][i] = temp[k];
-				//System.out.println("temp " + temp[k]);
+				// System.out.println("temp " + temp[k]);
 				builder.append(temp[k]);
 			}
 		}
@@ -382,7 +373,7 @@ public class AES {
 		System.out.println(builder.toString());
 		return plaintext;
 	}
-	
+
 	public static String[] invMixColumns(String[] plaintext) {
 		Byte[] myB = new Byte[4];
 		int val, bee;
@@ -391,14 +382,14 @@ public class AES {
 		int invMat;
 		String[] tempResults = new String[4];
 		String[] results = new String[4];
-	
+
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < 4; i++) {
 			for (int j = 0; j < 4; j++) {
 				s = plaintext[j];
-				//System.out.println("s: " + s);
+				// System.out.println("s: " + s);
 				invMat = invCol[i][j];
-				//System.out.println(invMat);
+				// System.out.println(invMat);
 				if (invMat == 9)
 					tempResults[j] = Integer.toHexString(invMult(s, 9));
 				else if (invMat == 11)
@@ -408,21 +399,23 @@ public class AES {
 				else if (invMat == 14)
 					tempResults[j] = Integer.toHexString(invMult(s, 14));
 
-				//System.out.println("tempResults[" + j + "] = " + tempResults[j]);
+				// System.out.println("tempResults[" + j + "] = " +
+				// tempResults[j]);
 				val = Integer.parseInt(tempResults[j], 16);
 				b = (byte) val;
 				myB[j] = b;
-				//System.out.println("myB[" + j+ "]: " + String.format("%02X", myB[j]));
+				// System.out.println("myB[" + j+ "]: " + String.format("%02X",
+				// myB[j]));
 			}
 			Byte result = (byte) (myB[0] ^ myB[1] ^ myB[2] ^ myB[3]);
 			String test = String.format("%02X", result);
-			//System.out.println("r" + i + ": " + test);
+			// System.out.println("r" + i + ": " + test);
 			results[i] = test;
 			builder.append(test);
-			//System.out.println("what" + test);
+			// System.out.println("what" + test);
 		}
-		//System.out.println("After invMixColumns:");
-		//System.out.println(builder.toString());
+		// System.out.println("After invMixColumns:");
+		// System.out.println(builder.toString());
 		return results;
 	}
 
@@ -741,9 +734,9 @@ public class AES {
 		int[] mul11 = sBox.get11Box();
 		int[] mul13 = sBox.get13Box();
 		int[] mul14 = sBox.get14Box();
-		//System.out.println(Integer.parseInt(s, 16));
-		
-		if (num == 9) 
+		// System.out.println(Integer.parseInt(s, 16));
+
+		if (num == 9)
 			return mul9[Integer.parseInt(s, 16)];
 		else if (num == 11)
 			return mul11[Integer.parseInt(s, 16)];
@@ -751,7 +744,7 @@ public class AES {
 			return mul13[Integer.parseInt(s, 16)];
 		else
 			return mul14[Integer.parseInt(s, 16)];
-		
+
 	}
 
 	public static String[][] addRoundKey(String[][] plaintext,
@@ -765,10 +758,10 @@ public class AES {
 			for (int j = 0; j < 4; j++) {
 				val = Integer.parseInt(plaintext[j][i], 16);
 				b = (byte) val;
-				//System.out.println(val);
+				// System.out.println(val);
 
 				val2 = Integer.parseInt(roundkey[j][i], 16);
-				//System.out.println(val2);
+				// System.out.println(val2);
 				b2 = (byte) val2;
 
 				b = (byte) (b ^ b2);
